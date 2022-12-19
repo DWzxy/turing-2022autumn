@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/user/mine/turing/turing-project/main.cpp
+node.h
+/home/user/mine/turing/turing-project/node.h
+
+/home/user/mine/turing/turing-project/node.cpp
+node.h
+/home/user/mine/turing/turing-project/node.h
+
+/home/user/mine/turing/turing-project/node.h
+iostream
+-
+cstdio
+-
+vector
+-
+cstring
+-
+cstdlib
+-
+
