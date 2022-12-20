@@ -1,6 +1,6 @@
 #include "node.h"
 using namespace std;
-#define DEBUG
+ #define DEBUG
 
 extern FILE *p;
 extern bool debug;
@@ -14,6 +14,7 @@ vector<State *> final_set; // 终结状态集
 int tape_num;              // 纸带数
 
 Machine *machine;
+int step = 0;
 
 // 映射，正数为双，负数为单
 // 0 -> 0
@@ -21,27 +22,17 @@ Machine *machine;
 // 1 2 3 -> 2 4 6
 void move_right(int i)
 {
-    int x = machine->point[i];
-    x += 1;
-    if (x > machine->right[i])
-    {
+    machine->point[i] += 1;
+    int now = tran_num(machine->point[i]);
+    for (int k = machine->tapes[i].size() - 1; k < now; k++)
         machine->tapes[i].push_back(space_letter);
-        machine->tapes[i].push_back(space_letter);
-        machine->right[i] = x;
-    }
-    machine->point[i] = x;
 }
 void move_left(int i)
 {
-    int x = machine->point[i];
-    x -= 1;
-    if (x < machine->left[i])
-    {
+    machine->point[i] -= 1;
+    int now = tran_num(machine->point[i]);
+    for (int k = machine->tapes[i].size() - 1; k < now; k++)
         machine->tapes[i].push_back(space_letter);
-        machine->tapes[i].push_back(space_letter);
-        machine->left[i] = x;
-    }
-    machine->point[i] = x;
 }
 
 int tran_num(int x)
@@ -62,17 +53,33 @@ int retran_num(int x)
         return -((x + 1) >> 1);
 }
 
-Edge* find_edge(){
-    for(Edge *i=machine->state->edge_head;i;i=i->next){
-        for(int j=0;j<tape_num){
-            cout<<
-            machine->tapes[j][tran_num(machine->point[j])];
+Edge *find_edge()
+{
+#ifdef DEBUG
+    cout << "try to find  ";
+    for (int j = 0; j < tape_num; j++)
+    {
+        cout << machine->tapes[j][tran_num(machine->point[j])];
+    }
+    cout << endl;
+#endif
+    for (Edge *i = machine->state->edge_head; i; i = i->next)
+    {
+        bool flag = true;
+#ifdef DEBUG
+        cout << "now check " << i->new_state->name << "  ";
+        for (int j = 0; j < tape_num; j++)
+            cout << i->old_letter[j];
+        cout << endl;
+#endif
+        for (int j = 0; j < tape_num; j++)
+        {
+            if (i->old_letter[j] != '*' && i->old_letter[j] !=
+                                               machine->tapes[j][tran_num(machine->point[j])])
+                flag = false;
         }
-        cout<<endl;
-        for(int j=0;j<tape_num){
-            if(i->old_letter[j]!='*'&&i->old_letter[j]!=
-            machine->tapes[j][tran_num(machine->point[j])]) continue;
-        }
+        if (!flag)
+            continue;
         return i;
     }
     return NULL;
@@ -80,8 +87,21 @@ Edge* find_edge(){
 
 void print_tape(int x)
 {
-    int left = machine->left[x], right = machine->right[x];
-    int tmp = 0;
+    int left = 0, right = 0;
+    int size = machine->tapes[x].size() - 1;
+    if (size == 0)
+        left = right = 0;
+    else if (size % 2)
+        left = retran_num(size), right = retran_num(size - 1);
+    else
+        left = retran_num(size - 1), right = retran_num(size);
+
+    while (machine->tapes[x][tran_num(left)] == space_letter &&
+           left < machine->point[x])
+        left++;
+    while (machine->tapes[x][tran_num(right)] == space_letter &&
+           right > machine->point[x])
+        right--;
 
     printf("Index%-2d: ", x);
     for (int i = left; i <= right; i++)
@@ -93,7 +113,6 @@ void print_tape(int x)
     for (int i = left; i <= right; i++)
     {
         cout << machine->tapes[x][tran_num(i)];
-        tmp = 0;
         if (i < -9 || i > 9)
             cout << "  ";
         else
@@ -104,7 +123,6 @@ void print_tape(int x)
     printf("Head%-3d: ", x);
     for (int i = left; i < machine->point[x]; i++)
     {
-        tmp = 0;
         if (i < -9 || i > 9)
             cout << "   ";
         else
@@ -268,6 +286,17 @@ void read()
         cout << endl;
 #endif
     }
+
+#ifdef DEBUG
+    for (int i = 0; i < state_set.size(); i++)
+    {
+        cout << state_set[i]->name << endl;
+        for (Edge *k = state_set[i]->edge_head; k; k = k->next)
+        {
+            cout << " -> " << k->new_state->name << endl;
+        }
+    }
+#endif
 }
 
 void read_single()
@@ -357,8 +386,9 @@ void read_single()
         skip_char('0');
         skip_char('=');
         skip_char(' ');
-        start = new State();
-        read_state_name(start->name);
+        char t[50];
+        read_state_name(t);
+        start = find_state(t);
 #ifdef DEBUG
         cout << "start state = " << start->name << endl;
 #endif
@@ -416,7 +446,7 @@ void read_single()
 void run(char *w)
 {
     // 先检查输入串
-    cout << "Input: " << w << endl;
+    //   cout << "Input: " << w << endl;
     for (int i = 0; i < strlen(w); i++)
     {
         if (in_letters[w[i]] == false)
@@ -428,36 +458,89 @@ void run(char *w)
             cout << "       ";
             for (int k = 0; k < i; k++)
                 cout << ' ';
-            cout << '^';
+            cout << '^' << endl;
             cout << "==================== END ====================" << endl;
             exit(-1);
         }
     }
+#ifdef DEBUG
     cout << "==================== RUN ====================" << endl;
+#endif
 
     machine = new Machine();
     machine->state = start;
     for (int i = 0; i < tape_num; i++)
     {
         machine->point[i] = 0;
-        machine->left[i] = 1;
-        machine->right[i] = -1;
+        machine->tapes[i].push_back(space_letter);
     }
     for (int i = 0; i < strlen(w); i++)
     {
-        machine->tapes[0].push_back(w[i]);
+        machine->tapes[0][i << 1] = w[i];
+        machine->tapes[0].push_back(space_letter);
         machine->tapes[0].push_back(space_letter);
     }
-    machine->left[0] = 0;
-    machine->right[0] = strlen(w) - 1;
 
-  /*  for (int i = 1; i <= 10; i++)
-        move_right(0);
-    for (int i = 1; i <= 20; i++)
-        move_left(0);
-    for (int i = 1; i <= 10; i++)
-        move_right(0);
-    print_tape(0);*/
+    /*  for (int i = 1; i <= 10; i++)
+          move_right(0);
+      for (int i = 1; i <= 20; i++)
+          move_left(0);
+      for (int i = 1; i <= 10; i++)
+          move_right(0);
+      */
 
-    
+    while (1)
+    {
+        if (debug)
+        {
+            printf("Step   : %d\n", step);
+            step++;
+            printf("State  : %s\n", machine->state->name);
+            for (int i = 0; i < tape_num; i++)
+                print_tape(i);
+            cout << "---------------------------------------------" << endl;
+        }
+        //    if (machine->state->final == true)
+        //      break;
+        Edge *edge = find_edge();
+        if (edge == NULL)
+            break; // 没有转移，停机
+
+        machine->state = edge->new_state; // 改状态
+        for (int i = 0; i < tape_num; i++)
+        { // 改写带符号
+            int num = tran_num(machine->point[i]);
+            char letter = edge->new_letter[i];
+            if (letter != '*')
+                machine->tapes[i][num] = letter;
+        }
+        for (int i = 0; i < tape_num; i++)
+        { // 移动指针
+            char letter = edge->new_step[i];
+            if (letter == 'l')
+                move_left(i);
+            else if (letter == 'r')
+                move_right(i);
+        }
+    }
+
+    if (debug)
+        cout << "Result: ";
+
+    int left = 0, right = 0;
+    int size = machine->tapes[0].size() - 1;
+    if (size == 0)
+        left = right = 0;
+    else if (size % 2)
+        left = retran_num(size), right = retran_num(size - 1);
+    else
+        left = retran_num(size - 1), right = retran_num(size);
+
+    while (machine->tapes[0][tran_num(left)] == space_letter)
+        left++;
+    while (machine->tapes[0][tran_num(right)] == space_letter)
+        right--;
+    for (int i = left; i <= right; i++)
+        cout << machine->tapes[0][tran_num(i)];
+    cout << endl;
 }

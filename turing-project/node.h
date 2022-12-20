@@ -30,8 +30,6 @@ struct Machine
     State *state;
     int point[N];          // 指针
     vector<char> tapes[N]; // 纸带
-    int left[N];           // 最左端
-    int right[N];          // 最右端
 };
 
 void move_right(int x);
