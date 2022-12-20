@@ -62,6 +62,22 @@ int retran_num(int x)
         return -((x + 1) >> 1);
 }
 
+Edge* find_edge(){
+    for(Edge *i=machine->state->edge_head;i;i=i->next){
+        for(int j=0;j<tape_num){
+            cout<<
+            machine->tapes[j][tran_num(machine->point[j])];
+        }
+        cout<<endl;
+        for(int j=0;j<tape_num){
+            if(i->old_letter[j]!='*'&&i->old_letter[j]!=
+            machine->tapes[j][tran_num(machine->point[j])]) continue;
+        }
+        return i;
+    }
+    return NULL;
+}
+
 void print_tape(int x)
 {
     int left = machine->left[x], right = machine->right[x];
