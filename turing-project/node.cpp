@@ -1,6 +1,6 @@
 #include "node.h"
 using namespace std;
- #define DEBUG
+#define DEBUG
 
 extern FILE *p;
 extern bool debug;
@@ -178,22 +178,54 @@ void clear_note()
 {
     char c;
     fscanf(p, "%c", &c);
-    while (!feof(p) && c != '\n')
+    while ( c != '\n')
     {
         fscanf(p, "%c", &c);
+        if(feof(p)) break;
     }
-    //   fseek(p, -1, SEEK_CUR);
+    if(c=='\n')
+       fseek(p, -1, SEEK_CUR);
 }
 
 void skip_char(char x)
 {
     char c;
-    fscanf(p, "%c", &c);
+    bool flag = 0;
+    //  cout<<"skip ";
+    while (1)
+    {  
+          fscanf(p, "%c", &c);
+          if(feof(p)) error();
+        if (c == ' ')
+            continue;
+        else if (c == ';')
+            clear_note();
+        else if (c == x)
+            flag = 1;
+        else if (c != ';' && flag)
+        {
+            c = x;
+            fseek(p, -1, SEEK_CUR);
+            break;
+        }
+    }
+    //   cout<<endl;
+}
+
+bool try_char(char x)
+{
+    cout << "start" << endl;
+    char c;
     bool flag = 0;
     //  cout<<"skip ";
     while (!feof(p))
     {
-        //      cout<<c;
+        fscanf(p, "%c", &c);
+        cout << c;
+        if (feof(p))
+            return false;
+        if (c == ' ')
+            continue;
         if (c == ';')
             clear_note();
         else if (c == x)
@@ -204,20 +236,17 @@ void skip_char(char x)
             fseek(p, -1, SEEK_CUR);
             break;
         }
-        fscanf(p, "%c", &c);
     }
-    //   cout<<endl;
+    cout << endl;
     if (c != x)
-        error();
+        return false;
+    return true;
 }
 
 void error()
 {
-    if (!debug)
-    {
-        cout << "syntax error" << endl;
-        exit(0);
-    }
+    cout << "syntax error" << endl;
+    exit(0);
 }
 
 void check_in_letters()
@@ -237,11 +266,13 @@ void read()
     }
     check_in_letters(); // 检查输入符号是否在带符号里
 
-    skip_char('\n');
-    // 接下来是转移函数
     char c;
-    while (!feof(p))
+    while (1)
     {
+        bool flag = try_char('\n');
+        if (!flag)
+            break;
+        // 接下来是转移函数
         // 旧状态
         char tmp[50];
         read_state_name(tmp);
@@ -270,7 +301,6 @@ void read()
         fscanf(p, "%c", &c);
         read_state_name(tmp);
         edge->new_state = find_state(tmp);
-        skip_char('\n');
 #ifdef DEBUG
         cout << " -> " << edge->new_state->name << "   ";
 
@@ -301,6 +331,7 @@ void read()
 
 void read_single()
 {
+
     char c;
     skip_char('#');
     fscanf(p, "%c", &c);
@@ -379,15 +410,14 @@ void read_single()
         cout << endl;
 #endif
     }
-
     // 初始状态
     if (c == 'q')
     {
         skip_char('0');
         skip_char('=');
-        skip_char(' ');
         char t[50];
         read_state_name(t);
+        cout << "state " << t << endl;
         start = find_state(t);
 #ifdef DEBUG
         cout << "start state = " << start->name << endl;
@@ -398,7 +428,6 @@ void read_single()
     if (c == 'B')
     {
         skip_char('=');
-        fscanf(p, "%c", &c);
         fscanf(p, "%c", &c);
         space_letter = c;
 #ifdef DEBUG
@@ -435,7 +464,6 @@ void read_single()
     if (c == 'N')
     {
         skip_char('=');
-        fscanf(p, "%c", &c);
         fscanf(p, "%d", &tape_num);
 #ifdef DEBUG
         cout << "num = " << tape_num << endl;

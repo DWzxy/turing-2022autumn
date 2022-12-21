@@ -46,6 +46,7 @@ Edge *new_edge(char *from);
 char read_state_name(char *name);
 void clear_note();
 void skip_char(char c);
+bool try_char(char c);
 void error();
 void check_in_letters();
 
