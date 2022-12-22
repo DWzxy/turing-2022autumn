@@ -32,7 +32,8 @@
 0 *** *** *** cmp13
 
 ; State plus2: 
-plus2 *_* *1* *r* cmp13
+plus2 *1* *1* *r* plus2
+plus2 *_* *1* *** cmp13
 
 ;State plus3_1: i^2+=i
 plus3_1 *1_ *11 *lr plus3_1
@@ -40,7 +41,7 @@ plus3_1 *_* *_* *r* plus3_2
 
 ;State plus3_2: i^2+=i
 plus3_2 *1_ *11 *rr plus3_2
-plus3_2 *_* *_* *** plus3
+plus3_2 *_* *_* *l* plus3
 
 ; State plus3: 
 plus3 **_ **1 *** back3

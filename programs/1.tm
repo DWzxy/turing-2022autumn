@@ -22,7 +22,11 @@
 ; the number of tapes
 #N = 2
 
+
 ; the transition functions
+
+
+
 
 ; State 0: start state
 0 0_ 0_ ** cp
@@ -41,6 +45,8 @@ mh 10 10 l* mh
 mh 11 11 l* mh
 mh _0 _0 r* cmp
 mh _1 _1 r* cmp
+
+
 
 ; State cmp: compare two strings
 cmp 00 __ rl cmp

@@ -11,9 +11,8 @@ struct State;
 struct Edge
 {
     vector<char> old_letter; // 现在指向的字符
-
     vector<char> new_letter; // 将要写下的字符
-    vector<char> new_step;
+    vector<char> new_step;   // 移动方向
     State *new_state;
     Edge *next = NULL;
 };
@@ -36,7 +35,7 @@ void move_right(int x);
 void move_left(int x);
 int tran_num(int x);
 int retran_num(int x);
-Edge* find_edge();
+Edge *find_edge();
 void print_tape(int x);
 
 State *find_state(char *name);
@@ -48,6 +47,7 @@ void clear_note();
 void skip_char(char c);
 bool try_char(char c);
 void error();
+void check_char(char x,bool flag);
 void check_in_letters();
 
 void read();

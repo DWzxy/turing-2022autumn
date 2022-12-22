@@ -1,6 +1,6 @@
 #include "node.h"
 using namespace std;
-#define DEBUG
+// #define DEBUG
 
 extern FILE *p;
 extern bool debug;
@@ -10,7 +10,6 @@ bool in_letters[256];      // 输入字符集，bool表示是否在其中
 bool all_letters[256];     // 字符集
 State *start;              // 初始状态
 char space_letter;         // 空格符号
-vector<State *> final_set; // 终结状态集
 int tape_num;              // 纸带数
 
 Machine *machine;
@@ -63,15 +62,19 @@ Edge *find_edge()
     }
     cout << endl;
 #endif
+
+    Edge *tmp = NULL;
     for (Edge *i = machine->state->edge_head; i; i = i->next)
     {
         bool flag = true;
+
 #ifdef DEBUG
         cout << "now check " << i->new_state->name << "  ";
         for (int j = 0; j < tape_num; j++)
             cout << i->old_letter[j];
         cout << endl;
 #endif
+
         for (int j = 0; j < tape_num; j++)
         {
             if (i->old_letter[j] != '*' && i->old_letter[j] !=
@@ -80,9 +83,31 @@ Edge *find_edge()
         }
         if (!flag)
             continue;
-        return i;
+        if (tmp == NULL)
+            tmp = i;
+        else
+        {
+            // 看是否比之前的更精确
+            flag = true;
+            for (int j = 0; j < tape_num; j++)
+            {
+                if (i->old_letter[j] == '*' &&
+                    tmp->old_letter[j] != '*')
+                    flag = false;
+            }
+            if (flag)
+                tmp = i;
+        }
     }
-    return NULL;
+#ifdef DEBUG
+    if (tmp == NULL)
+        return tmp;
+    cout << "finally choose " << tmp->new_state->name << "  ";
+    for (int j = 0; j < tape_num; j++)
+        cout << tmp->old_letter[j];
+    cout << endl;
+#endif
+    return tmp;
 }
 
 void print_tape(int x)
@@ -165,6 +190,8 @@ char read_state_name(char *name)
     fscanf(p, "%c", &c);
     while (c != ',' && c != '}' && c != '\n' && c != ' ')
     {
+        if (feof(p))
+            break;
         name[i] = c;
         i++;
         fscanf(p, "%c", &c);
@@ -178,13 +205,14 @@ void clear_note()
 {
     char c;
     fscanf(p, "%c", &c);
-    while ( c != '\n')
+    while (c != '\n')
     {
         fscanf(p, "%c", &c);
-        if(feof(p)) break;
+        if (feof(p))
+            break;
     }
-    if(c=='\n')
-       fseek(p, -1, SEEK_CUR);
+    if (c == '\n')
+        fseek(p, -1, SEEK_CUR);
 }
 
 void skip_char(char x)
@@ -193,9 +221,10 @@ void skip_char(char x)
     bool flag = 0;
     //  cout<<"skip ";
     while (1)
-    {  
-          fscanf(p, "%c", &c);
-          if(feof(p)) error();
+    {
+        fscanf(p, "%c", &c);
+        if (feof(p))
+            error();
         if (c == ' ')
             continue;
         else if (c == ';')
@@ -214,14 +243,11 @@ void skip_char(char x)
 
 bool try_char(char x)
 {
-    cout << "start" << endl;
     char c;
     bool flag = 0;
-    //  cout<<"skip ";
-    while (!feof(p))
+    while (1)
     {
         fscanf(p, "%c", &c);
-        cout << c;
         if (feof(p))
             return false;
         if (c == ' ')
@@ -232,14 +258,10 @@ bool try_char(char x)
             flag = 1;
         else if (c != ';' && flag)
         {
-            c = x;
             fseek(p, -1, SEEK_CUR);
             break;
         }
     }
-    cout << endl;
-    if (c != x)
-        return false;
     return true;
 }
 
@@ -247,6 +269,15 @@ void error()
 {
     cout << "syntax error" << endl;
     exit(0);
+}
+
+void check_char(char x, bool flag) // 若为true则允许_存在
+{
+    if (x == ' ' || x == ',' || x == ';' || x == '{' ||
+        x == '}' || x == '*')
+        error();
+    if (!flag && x == '_')
+        error();
 }
 
 void check_in_letters()
@@ -277,9 +308,11 @@ void read()
         char tmp[50];
         read_state_name(tmp);
         Edge *edge = new_edge(tmp);
+        //       cout<<"666  "<<tmp<<endl;
 #ifdef DEBUG
         cout << tmp;
 #endif
+        // cout<<"888  "<<tmp<<endl;
         fscanf(p, "%c", &c); // 空格
         for (int i = 0; i < tape_num; i++)
         {
@@ -363,21 +396,22 @@ void read_single()
     if (c == 'S')
     {
         skip_char('=');
-        skip_char('{');
 #ifdef DEBUG
         cout << "in_letters: ";
 #endif
         while (fscanf(p, "%c", &c))
         {
-            if (c == '\n')
-                error();
             if (c == '}')
                 break;
-            if (c == ',')
-                continue;
+            if (c != '{' && c != ',')
+                error();
+            fscanf(p, "%c", &c);
+            if (c == '}')
+                break;
 #ifdef DEBUG
             cout << c << " ";
 #endif
+            check_char(c, false);
             in_letters[c] = true;
         }
 #ifdef DEBUG
@@ -389,21 +423,22 @@ void read_single()
     if (c == 'G')
     {
         skip_char('=');
-        skip_char('{');
 #ifdef DEBUG
         cout << "all_letters: ";
 #endif
         while (fscanf(p, "%c", &c))
         {
-            if (c == '\n')
-                error();
             if (c == '}')
                 break;
-            if (c == ',')
-                continue;
+            if (c != '{' && c != ',')
+                error();
+            fscanf(p, "%c", &c);
+            if (c == '}')
+                break;
 #ifdef DEBUG
             cout << c << " ";
 #endif
+            check_char(c, true);
             all_letters[c] = true;
         }
 #ifdef DEBUG
@@ -417,7 +452,6 @@ void read_single()
         skip_char('=');
         char t[50];
         read_state_name(t);
-        cout << "state " << t << endl;
         start = find_state(t);
 #ifdef DEBUG
         cout << "start state = " << start->name << endl;
@@ -474,26 +508,34 @@ void read_single()
 void run(char *w)
 {
     // 先检查输入串
-    //   cout << "Input: " << w << endl;
+    if (debug)
+        cout << "Input: " << w << endl;
     for (int i = 0; i < strlen(w); i++)
     {
         if (in_letters[w[i]] == false)
         {
-            cout << "==================== ERR ====================" << endl;
-            cout << "error: '" << w[i] << "' was not declared in the set of input symbols " << endl;
-            cout
-                << "Input: " << w << endl;
-            cout << "       ";
-            for (int k = 0; k < i; k++)
-                cout << ' ';
-            cout << '^' << endl;
-            cout << "==================== END ====================" << endl;
-            exit(-1);
+            if (debug)
+            {
+                cout << "==================== ERR ====================" << endl;
+                cout << "error: '" << w[i] << "' was not declared in the set of input symbols " << endl;
+                cout
+                    << "Input: " << w << endl;
+                cout << "       ";
+                for (int k = 0; k < i; k++)
+                    cout << ' ';
+                cout << '^' << endl;
+                cout << "==================== END ====================" << endl;
+                exit(-1);
+            }
+            else
+            {
+                cout << "illegal input" << endl;
+                exit(-1);
+            }
         }
     }
-#ifdef DEBUG
-    cout << "==================== RUN ====================" << endl;
-#endif
+    if (debug)
+        cout << "==================== RUN ====================" << endl;
 
     machine = new Machine();
     machine->state = start;
@@ -519,6 +561,8 @@ void run(char *w)
 
     while (1)
     {
+        //   if (step > 25)
+        //       break;
         if (debug)
         {
             printf("Step   : %d\n", step);
@@ -571,4 +615,7 @@ void run(char *w)
     for (int i = left; i <= right; i++)
         cout << machine->tapes[0][tran_num(i)];
     cout << endl;
+
+    if (debug)
+        cout << "==================== END ====================" << endl;
 }
