@@ -393,7 +393,7 @@ void read_single()
     }
 
     // 输入符号集
-    if (c == 'S')
+    else if (c == 'S')
     {
         skip_char('=');
 #ifdef DEBUG
@@ -420,7 +420,7 @@ void read_single()
     }
 
     // 带符号集
-    if (c == 'G')
+    else if (c == 'G')
     {
         skip_char('=');
 #ifdef DEBUG
@@ -446,7 +446,7 @@ void read_single()
 #endif
     }
     // 初始状态
-    if (c == 'q')
+    else if (c == 'q')
     {
         skip_char('0');
         skip_char('=');
@@ -459,7 +459,7 @@ void read_single()
     }
 
     // 初始符号
-    if (c == 'B')
+    else if (c == 'B')
     {
         skip_char('=');
         fscanf(p, "%c", &c);
@@ -470,7 +470,7 @@ void read_single()
     }
 
     // 终结状态
-    if (c == 'F')
+    else if (c == 'F')
     {
         skip_char('=');
         skip_char('{');
@@ -495,7 +495,7 @@ void read_single()
 #endif
     }
 
-    if (c == 'N')
+    else if (c == 'N')
     {
         skip_char('=');
         fscanf(p, "%d", &tape_num);
@@ -503,6 +503,8 @@ void read_single()
         cout << "num = " << tape_num << endl;
 #endif
     }
+
+    else error();
 }
 
 void run(char *w)
