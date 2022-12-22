@@ -1,3 +1,0 @@
-/home/user/mine/turing/build/CMakeFiles/rebuild_cache.dir
-/home/user/mine/turing/build/CMakeFiles/edit_cache.dir
-/home/user/mine/turing/build/CMakeFiles/turing.dir

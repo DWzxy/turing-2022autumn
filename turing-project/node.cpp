@@ -267,8 +267,8 @@ bool try_char(char x)
 
 void error()
 {
-    cout << "syntax error" << endl;
-    exit(0);
+    cerr << "syntax error" << endl;
+    exit(-1);
 }
 
 void check_char(char x, bool flag) // 若为true则允许_存在
@@ -504,40 +504,42 @@ void read_single()
 #endif
     }
 
-    else error();
+    else
+        error();
 }
 
 void run(char *w)
 {
     // 先检查输入串
-    if (debug)
-        cout << "Input: " << w << endl;
     for (int i = 0; i < strlen(w); i++)
     {
         if (in_letters[w[i]] == false)
         {
             if (debug)
             {
-                cout << "==================== ERR ====================" << endl;
-                cout << "error: '" << w[i] << "' was not declared in the set of input symbols " << endl;
-                cout
-                    << "Input: " << w << endl;
-                cout << "       ";
+                cerr << "Input: " << w << endl;
+                cerr << "==================== ERR ====================" << endl;
+                cerr << "error: '" << w[i] << "' was not declared in the set of input symbols " << endl;
+                cerr << "Input: " << w << endl;
+                cerr << "       ";
                 for (int k = 0; k < i; k++)
-                    cout << ' ';
-                cout << '^' << endl;
-                cout << "==================== END ====================" << endl;
+                    cerr << ' ';
+                cerr << '^' << endl;
+                cerr << "==================== END ====================" << endl;
                 exit(-1);
             }
             else
             {
-                cout << "illegal input" << endl;
+                cerr << "illegal input" << endl;
                 exit(-1);
             }
         }
     }
     if (debug)
+    {
+        cout << "Input: " << w << endl;
         cout << "==================== RUN ====================" << endl;
+    }
 
     machine = new Machine();
     machine->state = start;
